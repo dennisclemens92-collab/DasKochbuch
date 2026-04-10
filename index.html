@@ -36,24 +36,22 @@ html
             border: 1px solid rgba(139, 90, 43, 0.1);
         }
 
-        /* Navigation */
         .nav-tab { transition: all 0.3s ease; border-bottom: 4px solid transparent; }
         .nav-tab.active { color: var(--accent-color); border-bottom-color: var(--accent-color); font-weight: bold; }
 
-        /* Recipe Grid Mobile Fix */
         .recipe-card {
             border-left: 5px solid var(--accent-color);
             transition: all 0.2s ease;
         }
-        .recipe-card:active { transform: scale(0.98); }
 
-        /* Book Page Flip Effect */
+        /* Book Flip Animation */
         .book-wrapper {
             perspective: 1500px;
             width: 100%;
-            max-width: 1000px;
-            height: 75vh;
+            max-width: 800px;
+            height: 70vh;
             position: relative;
+            margin: auto;
         }
 
         .page {
@@ -65,6 +63,7 @@ html
             backface-visibility: hidden;
             transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
+            border-radius: 24px;
         }
 
         .page-ingredients { z-index: 2; transform: rotateY(0deg); }
@@ -73,7 +72,6 @@ html
         .is-flipped .page-ingredients { transform: rotateY(-180deg); }
         .is-flipped .page-instructions { transform: rotateY(0deg); z-index: 3; }
 
-        /* Rustikale Elemente */
         .btn-rustikal { background-color: var(--accent-color); color: white; border-radius: 12px; }
         .btn-turn-page { 
             background: #eaddca; 
@@ -84,145 +82,133 @@ html
             align-items: center;
             justify-content: center;
             gap: 10px;
-            padding: 12px;
+            padding: 14px;
             width: 100%;
             margin-top: 20px;
-            border-radius: 12px;
+            border-radius: 16px;
         }
 
-        #syncStatus { font-size: 11px; padding: 5px 10px; border-radius: 20px; font-weight: 600; }
+        .status-badge { font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 600; }
         .status-offline { background: #fee2e2; color: #991b1b; }
         .status-online { background: #dcfce7; color: #166534; }
-        .status-pending { background: #fef9c3; color: #854d0e; }
 
-        /* Mobile Typography */
         @media (max-width: 640px) {
-            .book-wrapper { height: 80vh; }
+            .book-wrapper { height: 75vh; }
             .page { padding: 1.5rem !important; }
-            h2 { font-size: 1.75rem !important; }
         }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <!-- LOGIN OVERLAY -->
+    <!-- LOGIN -->
     <div id="loginOverlay" class="fixed inset-0 bg-[#f4ece1] z-[100] flex items-center justify-center p-4">
         <div class="paper-texture p-8 md:p-12 rounded-3xl max-w-md w-full text-center border-4 border-[#8b5a2b] shadow-2xl">
-            <i class="fas fa-book-open text-5xl text-[#8b5a2b] mb-4"></i>
-            <h2 class="text-3xl font-bold text-[#5d4037] mb-2">Rezept-Box Cloud</h2>
-            <p class="text-sm italic mb-6">Gib deinen Schlüssel ein, um auf deine Rezepte zuzugreifen.</p>
-            <input type="text" id="syncKeyInput" class="w-full p-4 rounded-xl border-2 border-[#d2b48c] text-center text-xl font-bold mb-4" placeholder="Dein Schlüssel">
-            <button onclick="startAppWithKey()" class="btn-rustikal w-full py-4 text-lg font-bold shadow-lg">Öffnen</button>
-            <div id="syncStatus" class="status-offline mt-4">Offline</div>
+            <i class="fas fa-utensils text-5xl text-[#8b5a2b] mb-4"></i>
+            <h2 class="text-3xl font-bold text-[#5d4037] mb-2">Meine Rezept-Box</h2>
+            <p class="text-sm italic mb-6">Bitte gib deinen Sync-Schlüssel ein.</p>
+            <input type="text" id="syncKeyInput" class="w-full p-4 rounded-xl border-2 border-[#d2b48c] text-center text-xl font-bold mb-4" placeholder="Schlüssel">
+            <button onclick="startAppWithKey()" class="btn-rustikal w-full py-4 text-lg font-bold">Box öffnen</button>
+            <div id="syncStatus" class="status-badge status-offline mt-4">Offline</div>
         </div>
     </div>
 
-    <!-- MAIN APP -->
+    <!-- APP CONTENT -->
     <div id="mainApp" class="hidden max-w-6xl mx-auto">
-        <nav class="flex justify-center gap-2 md:gap-8 mb-6 border-b border-[#d2b48c] overflow-x-auto">
-            <button onclick="switchTab('recipes')" id="nav-recipes" class="nav-tab py-3 px-4 active flex items-center gap-2"><i class="fas fa-book"></i> Rezepte</button>
-            <button onclick="switchTab('plan')" id="nav-plan" class="nav-tab py-3 px-4 flex items-center gap-2"><i class="fas fa-calendar-alt"></i> Plan</button>
-            <button onclick="switchTab('freezer')" id="nav-freezer" class="nav-tab py-3 px-4 flex items-center gap-2"><i class="fas fa-snowflake"></i> Gefrierer</button>
+        <nav class="flex justify-center gap-4 md:gap-12 mb-8 border-b border-[#d2b48c] overflow-x-auto pb-1">
+            <button onclick="switchTab('recipes')" id="nav-recipes" class="nav-tab py-3 px-2 active flex items-center gap-2"><i class="fas fa-book"></i> Rezepte</button>
+            <button onclick="switchTab('plan')" id="nav-plan" class="nav-tab py-3 px-2 flex items-center gap-2"><i class="fas fa-calendar-day"></i> Planer</button>
+            <button onclick="switchTab('freezer')" id="nav-freezer" class="nav-tab py-3 px-2 flex items-center gap-2"><i class="fas fa-snowflake"></i> Frost</button>
         </nav>
 
-        <!-- View: Recipes -->
         <div id="view-recipes" class="tab-view">
             <div class="flex gap-2 mb-6">
-                <input type="text" id="searchInput" oninput="renderRecipes()" placeholder="Suchen..." class="flex-grow p-4 rounded-2xl border-2 border-[#d2b48c] shadow-inner bg-white/50">
-                <button onclick="openModal()" class="btn-rustikal px-6 font-bold shadow-md"><i class="fas fa-plus"></i></button>
+                <input type="text" id="searchInput" oninput="renderRecipes()" placeholder="Suche in deinen Schätzen..." class="flex-grow p-4 rounded-2xl border-2 border-[#d2b48c] bg-white/50">
+                <button onclick="openModal()" class="btn-rustikal px-6"><i class="fas fa-plus"></i></button>
             </div>
-            <div id="filterContainer" class="flex flex-wrap gap-2 mb-6 overflow-x-auto pb-2"></div>
+            <div id="filterContainer" class="flex flex-wrap gap-2 mb-6"></div>
             <div id="recipeGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
         </div>
 
-        <!-- View: Plan -->
         <div id="view-plan" class="tab-view hidden">
-            <div id="planGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+            <div id="planGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
         </div>
 
-        <!-- View: Freezer -->
         <div id="view-freezer" class="tab-view hidden">
-            <div class="paper-texture p-6 rounded-3xl max-w-2xl mx-auto">
+            <div class="paper-texture p-6 rounded-3xl max-w-2xl mx-auto shadow-lg">
                 <div class="flex justify-between items-center mb-6 border-b-2 border-dashed border-[#d2b48c] pb-2">
-                    <h2 class="text-2xl font-bold text-[#5d4037]">Tiefkühler</h2>
-                    <button onclick="openFreezerModal()" class="text-[#8b5a2b] font-bold text-sm">+ Neu</button>
+                    <h2 class="text-2xl font-bold text-[#5d4037]">Tiefkühltruhe</h2>
+                    <button onclick="openFreezerModal()" class="text-[#8b5a2b] font-bold text-sm">+ Hinzufügen</button>
                 </div>
                 <div id="freezerList" class="space-y-3"></div>
             </div>
         </div>
     </div>
 
-    <!-- DETAIL MODAL (DAS BUCH) -->
+    <!-- DETAIL MODAL -->
     <div id="detailModal" class="fixed inset-0 bg-black/90 hidden z-[150] flex items-center justify-center p-2 md:p-6 backdrop-blur-md">
         <div class="absolute top-4 right-4 z-[200] flex gap-2">
-            <button onclick="closeDetail()" class="bg-white/10 text-white w-10 h-10 rounded-full flex items-center justify-center text-xl"><i class="fas fa-times"></i></button>
+            <button onclick="closeDetail()" class="bg-white/20 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl"><i class="fas fa-times"></i></button>
         </div>
 
         <div id="bookWrapper" class="book-wrapper">
-            <!-- PAGE 1: Zutaten / Einkaufsliste -->
-            <div class="page page-ingredients paper-texture p-6 md:p-12 rounded-3xl flex flex-col">
-                <div class="mb-6">
-                    <span id="detailLabel" class="text-[10px] uppercase tracking-widest text-[#8b5a2b] font-bold">Einkaufsliste</span>
-                    <h2 id="detailTitle" class="text-3xl font-bold text-[#5d4037]">Rezept Name</h2>
+            <!-- SEITE 1 -->
+            <div class="page page-ingredients paper-texture p-6 md:p-10 flex flex-col">
+                <div class="mb-4">
+                    <span class="text-[10px] uppercase tracking-widest text-[#8b5a2b] font-bold">Seite 1: Einkauf</span>
+                    <h2 id="detailTitle" class="text-2xl md:text-3xl font-bold text-[#5d4037]"></h2>
                 </div>
-                
-                <div id="detailImageContainer" class="hidden mb-6">
-                    <div class="glued-photo mx-auto"><img id="detailImage" src="" class="max-h-40 rounded"></div>
+                <div id="detailImageContainer" class="hidden mb-4">
+                    <div class="glued-photo mx-auto"><img id="detailImage" src="" class="max-h-32 rounded"></div>
                 </div>
-
-                <div class="flex-grow">
-                    <h3 class="font-bold border-b border-[#d2b48c] mb-3 text-[#8b5a2b]">Benötigte Zutaten</h3>
+                <div class="flex-grow overflow-y-auto pr-2">
+                    <h3 class="font-bold border-b border-[#d2b48c] mb-3 text-[#8b5a2b]">Zutatenliste</h3>
                     <div id="detailIngredients" class="whitespace-pre-line text-sm md:text-base leading-relaxed italic"></div>
                 </div>
-
                 <button onclick="flipPage(true)" class="btn-turn-page">
-                    <span>Umblättern zur Zubereitung</span>
-                    <i class="fas fa-arrow-right"></i>
+                    <span>Umblättern zum Kochen</span>
+                    <i class="fas fa-chevron-right"></i>
                 </button>
-                <button onclick="freezeCurrentRecipe()" class="text-[10px] mt-4 uppercase font-bold text-[#8b5a2b] opacity-60 text-center">Portionen einfrieren</button>
             </div>
-
-            <!-- PAGE 2: Zubereitung -->
-            <div class="page page-instructions paper-texture p-6 md:p-12 rounded-3xl flex flex-col">
-                <div class="flex justify-between items-start mb-6">
+            <!-- SEITE 2 -->
+            <div class="page page-instructions paper-texture p-6 md:p-10 flex flex-col">
+                <div class="flex justify-between items-start mb-4">
                     <div>
-                        <span class="text-[10px] uppercase tracking-widest text-[#8b5a2b] font-bold">Anleitung</span>
-                        <h2 id="detailTitleAlt" class="text-3xl font-bold text-[#5d4037]">Rezept Name</h2>
+                        <span class="text-[10px] uppercase tracking-widest text-[#8b5a2b] font-bold">Seite 2: Zubereitung</span>
+                        <h2 id="detailTitleAlt" class="text-2xl md:text-3xl font-bold text-[#5d4037]"></h2>
                     </div>
-                    <div class="flex gap-3">
-                        <button id="editBtn" class="text-sm text-[#8b5a2b]"><i class="fas fa-edit"></i></button>
-                        <button id="deleteRecipeBtn" class="text-sm text-red-700"><i class="fas fa-trash"></i></button>
+                    <div class="flex gap-4">
+                        <button id="editBtn" class="text-[#8b5a2b]"><i class="fas fa-pen"></i></button>
+                        <button id="deleteRecipeBtn" class="text-red-700"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
-
-                <div class="flex-grow">
-                    <h3 class="font-bold border-b border-[#d2b48c] mb-3 text-[#8b5a2b]">Schritt für Schritt</h3>
+                <div class="flex-grow overflow-y-auto pr-2">
+                    <h3 class="font-bold border-b border-[#d2b48c] mb-3 text-[#8b5a2b]">Zubereitung</h3>
                     <div id="detailInstructions" class="whitespace-pre-line text-sm md:text-base leading-relaxed"></div>
                 </div>
-
                 <button onclick="flipPage(false)" class="btn-turn-page">
-                    <i class="fas fa-arrow-left"></i>
-                    <span>Zurück zur Einkaufsliste</span>
+                    <i class="fas fa-chevron-left"></i>
+                    <span>Zurück zum Einkauf</span>
                 </button>
+                <button onclick="freezeCurrentRecipe()" class="text-[10px] mt-4 uppercase font-bold text-[#8b5a2b] opacity-40 text-center">In den Tiefkühler legen</button>
             </div>
         </div>
     </div>
 
-    <!-- OTHER MODALS (Freezer, Recipe-Form, Confirm) -->
+    <!-- DIALOGE -->
     <div id="recipeModal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-[160]">
-        <div class="paper-texture p-6 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border-4 border-[#8b5a2b]">
+        <div class="paper-texture p-6 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <form id="recipeForm" class="space-y-4">
                 <input type="hidden" id="editId">
-                <input type="text" id="recipeTitle" required class="w-full p-4 rounded-xl border-2 border-[#d2b48c]" placeholder="Wie heißt das Gericht?">
-                <input type="text" id="recipeLabels" class="w-full p-4 rounded-xl border-2 border-[#d2b48c]" placeholder="Kategorien (z.B. Mittag, Vegan)">
+                <input type="text" id="recipeTitle" required class="w-full p-4 rounded-xl border-2 border-[#d2b48c]" placeholder="Titel des Rezeptes">
+                <input type="text" id="recipeLabels" class="w-full p-4 rounded-xl border-2 border-[#d2b48c]" placeholder="Kategorien (z.B. Fisch, Schnell)">
                 <input type="file" id="recipeImageInput" accept="image/*" class="text-xs">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <textarea id="recipeIngredients" class="w-full p-4 rounded-xl border-2 border-[#d2b48c] h-40" placeholder="Was muss in den Einkaufskorb?"></textarea>
-                    <textarea id="recipeInstructions" class="w-full p-4 rounded-xl border-2 border-[#d2b48c] h-40" placeholder="Wie bereitet man es zu?"></textarea>
+                    <textarea id="recipeIngredients" class="w-full p-4 rounded-xl border-2 border-[#d2b48c] h-40" placeholder="Zutaten..."></textarea>
+                    <textarea id="recipeInstructions" class="w-full p-4 rounded-xl border-2 border-[#d2b48c] h-40" placeholder="Anleitung..."></textarea>
                 </div>
                 <div class="flex gap-4">
-                    <button type="button" onclick="closeModal()" class="flex-1 py-4 font-bold text-gray-500">Abbrechen</button>
-                    <button type="submit" class="flex-1 btn-rustikal py-4 font-bold shadow-lg">Speichern</button>
+                    <button type="button" onclick="closeModal()" class="flex-1 py-4 font-bold text-gray-400">Abbrechen</button>
+                    <button type="submit" class="flex-1 btn-rustikal py-4 font-bold">Speichern</button>
                 </div>
             </form>
         </div>
@@ -230,35 +216,38 @@ html
 
     <div id="planModal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-[160]">
         <div class="paper-texture p-6 rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col border-4 border-[#8b5a2b]">
-            <h3 id="planModalTitle" class="text-2xl font-bold mb-4">Planen</h3>
-            <input type="text" id="planSearchInput" oninput="filterPlanList()" class="w-full p-3 mb-4 rounded-xl border-2 border-[#d2b48c]" placeholder="Suche...">
-            <div id="planScrollContainer" class="flex-grow overflow-y-auto space-y-4">
+            <h3 id="planModalTitle" class="text-2xl font-bold mb-4">Was gibt's zu essen?</h3>
+            <input type="text" id="planSearchInput" oninput="window.filterPlanList()" class="w-full p-3 mb-4 rounded-xl border-2 border-[#d2b48c]" placeholder="Suchen...">
+            <div class="flex-grow overflow-y-auto space-y-4">
                 <div id="planRecipeList"></div>
                 <div id="planFreezerList"></div>
             </div>
-            <input type="text" id="planCustomText" class="w-full p-3 mt-4 rounded-xl border-2 border-[#d2b48c]" placeholder="Oder Freitext...">
-            <div class="flex gap-2 mt-4">
-                <button onclick="closePlanModal()" class="flex-1 py-3 text-gray-500 font-bold">Aus</button>
-                <button onclick="savePlanEntry()" class="flex-1 btn-rustikal py-3 font-bold">OK</button>
+            <div class="mt-4 pt-4 border-t border-dashed border-[#d2b48c]">
+                <input type="text" id="planCustomText" class="w-full p-3 rounded-xl border-2 border-[#d2b48c]" placeholder="Oder Freitext...">
+                <div class="flex gap-2 mt-4">
+                    <button onclick="closePlanModal()" class="flex-1 py-3 text-gray-500 font-bold">Abbrechen</button>
+                    <button onclick="window.savePlanEntry()" class="flex-1 btn-rustikal py-3 font-bold">Planen</button>
+                </div>
             </div>
         </div>
     </div>
 
     <div id="freezerModal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-[160]">
-        <div class="paper-texture p-6 rounded-2xl max-w-xs w-full border-2 border-[#8b5a2b]">
-            <input type="text" id="freezerItemName" class="w-full p-2 mb-2 border rounded" placeholder="Was?">
-            <input type="number" id="freezerItemPortions" class="w-full p-2 mb-4 border rounded" value="1">
-            <button onclick="saveFreezerItem()" class="btn-rustikal w-full py-2 font-bold">Hinzufügen</button>
+        <div class="paper-texture p-6 rounded-2xl max-w-xs w-full text-center">
+            <h3 class="font-bold mb-4">Vorrat hinzufügen</h3>
+            <input type="text" id="freezerItemName" class="w-full p-3 mb-2 border-2 rounded-xl" placeholder="Was?">
+            <input type="number" id="freezerItemPortions" class="w-full p-3 mb-4 border-2 rounded-xl" value="1">
+            <button onclick="window.saveFreezerItem()" class="btn-rustikal w-full py-3 font-bold">Hinzufügen</button>
         </div>
     </div>
 
     <div id="confirmModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-[250]">
-        <div class="paper-texture p-6 rounded-2xl max-w-xs w-full text-center border-2 border-red-700">
-            <h3 class="font-bold mb-2">Wirklich löschen?</h3>
-            <p id="confirmMessage" class="text-sm mb-6 opacity-70"></p>
-            <div class="flex gap-3">
-                <button onclick="closeConfirm()" class="flex-1 py-2 text-gray-500 font-bold">Nein</button>
-                <button id="confirmYesBtn" class="flex-1 py-2 bg-red-700 text-white rounded-lg font-bold">Löschen</button>
+        <div class="paper-texture p-8 rounded-2xl max-w-xs w-full text-center border-2 border-red-700">
+            <h3 class="font-bold text-xl mb-4">Sicher löschen?</h3>
+            <p id="confirmMessage" class="text-sm mb-8 opacity-60"></p>
+            <div class="flex gap-4">
+                <button onclick="window.closeConfirm()" class="flex-1 py-2 font-bold text-gray-400">Nein</button>
+                <button id="confirmYesBtn" class="flex-1 py-2 bg-red-700 text-white rounded-xl font-bold">Löschen</button>
             </div>
         </div>
     </div>
@@ -283,6 +272,7 @@ html
         let currentSyncKey = "", currentTab = 'recipes', activeFilter = null, currentImageData = "", currentPlanDay = "", currentRecipeInView = null;
         let confirmAction = null;
 
+        // --- AUTH & SYNC ---
         window.startAppWithKey = async () => {
             const key = document.getElementById('syncKeyInput').value.trim();
             if(!key) return alert("Gib einen Schlüssel ein!");
@@ -293,45 +283,36 @@ html
             document.getElementById('loginOverlay').classList.add('hidden');
             document.getElementById('mainApp').classList.remove('hidden');
             
-            await initFirebase();
-        };
-
-        const lastKey = localStorage.getItem('lastSyncKey');
-        if(lastKey) document.getElementById('syncKeyInput').value = lastKey;
-
-        const initFirebase = async () => {
-            const statusEl = document.getElementById('syncStatus');
-            try {
-                const app = initializeApp(userFirebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                
-                onAuthStateChanged(auth, (u) => {
-                    user = u;
-                    if (user && currentSyncKey) {
-                        startSync();
-                        statusEl.innerText = "Cloud Aktiv";
-                        statusEl.className = "status-online";
-                    }
-                });
-                await signInAnonymously(auth);
-            } catch (e) {
-                statusEl.innerText = "Nur Lokal";
-                statusEl.className = "status-offline";
-            }
+            const app = initializeApp(userFirebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            
+            onAuthStateChanged(auth, (u) => {
+                user = u;
+                if (user && currentSyncKey) {
+                    startSync();
+                    const s = document.getElementById('syncStatus');
+                    s.innerText = "Cloud Aktiv"; s.className = "status-badge status-online";
+                }
+            });
+            await signInAnonymously(auth);
         };
 
         const startSync = () => {
             const syncId = currentSyncKey; 
-            onSnapshot(collection(db, 'artifacts', baseAppId, 'public', 'data', 'recipes_' + syncId), (s) => { 
+            const appId = baseAppId;
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'recipes_' + syncId), (s) => { 
                 recipes = s.docs.map(d => ({ id: d.id, ...d.data() })); 
                 saveToLocal(); renderRecipes(); 
             });
-            onSnapshot(collection(db, 'artifacts', baseAppId, 'public', 'data', 'freezer_' + syncId), (s) => { 
+
+            onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'freezer_' + syncId), (s) => { 
                 freezer = s.docs.map(d => ({ id: d.id, ...d.data() })); 
                 saveToLocal(); renderFreezer(); 
             });
-            onSnapshot(doc(db, 'artifacts', baseAppId, 'public', 'data', 'plans_' + syncId), (s) => { 
+
+            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'plans', syncId), (s) => { 
                 if (s.exists()) weekPlan = s.data();
                 else weekPlan = {"Mo":null,"Di":null,"Mi":null,"Do":null,"Fr":null,"Sa":null,"So":null};
                 saveToLocal(); renderPlan(); 
@@ -353,6 +334,7 @@ html
             localStorage.setItem('pln_cache' + suffix, JSON.stringify(weekPlan));
         };
 
+        // --- NAVIGATION ---
         window.switchTab = (t) => {
             currentTab = t;
             document.querySelectorAll('.tab-view').forEach(v => v.classList.add('hidden'));
@@ -364,15 +346,16 @@ html
             else renderFreezer();
         };
 
+        // --- REZEPTE ---
         window.renderRecipes = () => {
             const grid = document.getElementById('recipeGrid');
             const term = document.getElementById('searchInput').value.toLowerCase();
             grid.innerHTML = '';
             recipes.filter(r => (!activeFilter || r.labels.includes(activeFilter)) && r.title.toLowerCase().includes(term)).forEach(r => {
                 const card = document.createElement('div');
-                card.className = 'paper-texture recipe-card p-5 rounded-2xl flex flex-col h-full shadow-md';
-                card.onclick = () => openDetail(r.id);
-                card.innerHTML = `<h3 class="font-bold text-lg mb-2">${r.title}</h3><div class="flex flex-wrap gap-1">${r.labels.map(l => `<span class="label-badge text-[9px] px-2 py-0.5 rounded-full font-bold uppercase">${l}</span>`).join('')}</div><div class="mt-auto pt-4 text-[10px] text-[#8b5a2b] uppercase font-bold tracking-widest">Ansehen</div>`;
+                card.className = 'paper-texture recipe-card p-5 rounded-2xl flex flex-col h-full shadow-md cursor-pointer';
+                card.onclick = () => window.openDetail(r.id);
+                card.innerHTML = `<h3 class="font-bold text-lg mb-2">${r.title}</h3><div class="flex flex-wrap gap-1">${r.labels.map(l => `<span class="bg-[#eaddca] text-[9px] px-2 py-0.5 rounded-full font-bold uppercase text-[#8b5a2b]">${l}</span>`).join('')}</div><div class="mt-auto pt-4 text-[10px] text-[#8b5a2b] uppercase font-bold tracking-widest">Öffnen</div>`;
                 grid.appendChild(card);
             });
             renderFilters();
@@ -381,9 +364,9 @@ html
         const renderFilters = () => {
             const container = document.getElementById('filterContainer');
             const labels = [...new Set(recipes.flatMap(r => r.labels))].sort();
-            container.innerHTML = `<button onclick="setFilter(null)" class="px-4 py-1.5 rounded-full border-2 text-xs font-bold ${!activeFilter ? 'bg-[#8b5a2b] text-white border-[#8b5a2b]' : 'bg-white border-[#d2b48c]'}">Alle</button>`;
+            container.innerHTML = `<button onclick="window.setFilter(null)" class="px-4 py-1.5 rounded-full border-2 text-xs font-bold ${!activeFilter ? 'bg-[#8b5a2b] text-white border-[#8b5a2b]' : 'bg-white border-[#d2b48c]'}">Alle</button>`;
             labels.forEach(l => {
-                container.innerHTML += `<button onclick="setFilter('${l}')" class="px-4 py-1.5 rounded-full border-2 text-xs font-bold ${activeFilter === l ? 'bg-[#8b5a2b] text-white border-[#8b5a2b]' : 'bg-white border-[#d2b48c]'}">${l}</button>`;
+                container.innerHTML += `<button onclick="window.setFilter('${l}')" class="px-4 py-1.5 rounded-full border-2 text-xs font-bold ${activeFilter === l ? 'bg-[#8b5a2b] text-white border-[#8b5a2b]' : 'bg-white border-[#d2b48c]'}">${l}</button>`;
             });
         };
         window.setFilter = (l) => { activeFilter = l; renderRecipes(); };
@@ -396,20 +379,17 @@ html
             document.getElementById('detailTitleAlt').innerText = r.title;
             document.getElementById('detailIngredients').innerText = r.ingredients || "Keine Zutaten";
             document.getElementById('detailInstructions').innerText = r.instructions || "Keine Anleitung";
-            
-            const imgContainer = document.getElementById('detailImageContainer');
-            if (r.image) { document.getElementById('detailImage').src = r.image; imgContainer.classList.remove('hidden'); } 
-            else { imgContainer.classList.add('hidden'); }
-
+            const imgC = document.getElementById('detailImageContainer');
+            if (r.image) { document.getElementById('detailImage').src = r.image; imgC.classList.remove('hidden'); } 
+            else { imgC.classList.add('hidden'); }
             document.getElementById('bookWrapper').classList.remove('is-flipped');
             document.getElementById('detailModal').classList.remove('hidden');
-            
-            document.getElementById('editBtn').onclick = () => { closeDetail(); openModal(r.id); };
+            document.getElementById('editBtn').onclick = () => { window.closeDetail(); window.openModal(r.id); };
             document.getElementById('deleteRecipeBtn').onclick = () => {
-                showConfirm(`"${r.title}" löschen?`, async () => {
+                window.showConfirm(`"${r.title}" löschen?`, async () => {
                     if (db && user) await deleteDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'recipes_' + currentSyncKey, r.id));
                     else { recipes = recipes.filter(x => x.id !== r.id); saveToLocal(); renderRecipes(); }
-                    closeDetail();
+                    window.closeDetail();
                 });
             };
         };
@@ -442,7 +422,6 @@ html
                 instructions: document.getElementById('recipeInstructions').value,
                 image: currentImageData
             };
-            
             if(db && user) {
                 const path = `artifacts/${baseAppId}/public/data/recipes_${currentSyncKey}`;
                 if(id) await updateDoc(doc(db, path, id), data); 
@@ -452,75 +431,107 @@ html
                 else recipes.push({...data, id: Date.now().toString()});
                 saveToLocal(); renderRecipes();
             }
-            closeModal();
+            window.closeModal();
         };
 
+        // --- WOCHENPLAN ---
         window.renderPlan = () => {
             const grid = document.getElementById('planGrid'); grid.innerHTML = '';
             ["Mo","Di","Mi","Do","Fr","Sa","So"].forEach(day => {
                 const entry = weekPlan[day];
-                grid.innerHTML += `<div class="day-card p-5 rounded-2xl paper-texture shadow-sm border-l-4 border-[#8b5a2b]"><h3 class="font-bold border-b border-dashed border-[#d2b48c] mb-2 text-[#8b5a2b]">${day}</h3><div class="text-sm italic min-h-[50px] flex items-center">${entry ? entry.name : 'Noch nichts geplant...'}</div><button onclick="openPlanModal('${day}')" class="w-full mt-3 py-2 bg-[#eaddca] text-[#8b5a2b] rounded-xl text-xs font-bold uppercase tracking-wider">Planen</button></div>`;
+                const card = document.createElement('div');
+                card.className = 'day-card p-5 rounded-2xl paper-texture shadow-sm border-l-4 border-[#8b5a2b] flex flex-col h-full relative';
+                
+                // Lösch-Button falls was geplant ist
+                const deleteBtn = entry ? `<button onclick="window.deletePlanEntry('${day}')" class="absolute top-4 right-4 text-red-700/30 hover:text-red-700 p-1"><i class="fas fa-trash"></i></button>` : '';
+
+                card.innerHTML = `
+                    <h3 class="font-bold border-b border-dashed border-[#d2b48c] mb-2 text-[#8b5a2b]">${day}</h3>
+                    ${deleteBtn}
+                    <div class="text-sm italic min-h-[50px] flex items-center mb-4 pr-6">
+                        ${entry ? entry.name : 'Noch nichts geplant...'}
+                    </div>
+                    <button onclick="window.openPlanModal('${day}')" class="w-full mt-auto py-2 bg-[#eaddca] text-[#8b5a2b] rounded-xl text-xs font-bold uppercase">
+                        ${entry ? 'Ändern' : 'Planen'}
+                    </button>
+                `;
+                grid.appendChild(card);
             });
+        };
+
+        window.deletePlanEntry = async (day) => {
+            weekPlan[day] = null;
+            if (db && user) {
+                await setDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'plans', currentSyncKey), weekPlan);
+            } else {
+                saveToLocal();
+                renderPlan();
+            }
         };
 
         window.openPlanModal = (day) => {
             currentPlanDay = day;
             document.getElementById('planModalTitle').innerText = `${day} planen`;
             document.getElementById('planSearchInput').value = "";
-            renderPlanLists();
+            window.filterPlanList();
             document.getElementById('planModal').classList.remove('hidden');
         };
         window.closePlanModal = () => document.getElementById('planModal').classList.add('hidden');
-        window.filterPlanList = () => renderPlanLists(document.getElementById('planSearchInput').value);
-
-        function renderPlanLists(filter = "") {
+        
+        window.filterPlanList = () => {
             const rList = document.getElementById('planRecipeList');
             const fList = document.getElementById('planFreezerList');
-            const term = filter.toLowerCase();
+            const term = document.getElementById('planSearchInput').value.toLowerCase();
 
-            if (term === "") { rList.innerHTML = `<p class="text-[10px] italic p-3 opacity-40">Tippe zum Suchen...</p>`; }
-            else {
+            if (term === "") {
+                rList.innerHTML = `<p class="text-[10px] italic p-3 opacity-40">Tippe zum Suchen in Rezepten...</p>`;
+            } else {
                 const filtered = recipes.filter(r => r.title.toLowerCase().includes(term));
-                rList.innerHTML = filtered.map(r => `<button onclick="selectPlanItem('${r.title}', 'recipe', '${r.id}')" class="w-full text-left p-3 hover:bg-[#f4ece1] rounded-xl text-sm border-b border-gray-100 flex items-center gap-2"><i class="fas fa-utensils opacity-30"></i> ${r.title}</button>`).join('');
+                rList.innerHTML = filtered.map(r => `<button onclick="window.selectPlanItem('${r.title}', 'recipe', '${r.id}')" class="w-full text-left p-3 hover:bg-[#f4ece1] rounded-xl text-sm border-b border-gray-100 flex items-center gap-2"><i class="fas fa-utensils opacity-30 text-xs"></i> ${r.title}</button>`).join('');
             }
 
             const freez = freezer.filter(f => f.portions > 0 && f.name.toLowerCase().includes(term));
-            fList.innerHTML = `<h4 class="text-[9px] uppercase font-bold text-[#8b5a2b] mt-4 mb-2">Gefrierer</h4>` + freez.map(f => `<button onclick="selectPlanItem('${f.name}', 'freezer', '${f.id}')" class="w-full text-left p-3 hover:bg-[#f4ece1] rounded-xl text-sm border-b border-gray-100 flex justify-between items-center"><span class="flex items-center gap-2"><i class="fas fa-snowflake text-blue-400 opacity-60"></i> ${f.name}</span><span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">${f.portions} P.</span></button>`).join('');
-        }
+            fList.innerHTML = `<h4 class="text-[10px] uppercase font-bold text-[#8b5a2b] mt-4 mb-2">Aus dem Frost</h4>` + (freez.length ? freez.map(f => `<button onclick="window.selectPlanItem('${f.name}', 'freezer', '${f.id}')" class="w-full text-left p-3 hover:bg-[#f4ece1] rounded-xl text-sm border-b border-gray-100 flex justify-between items-center"><span class="flex items-center gap-2"><i class="fas fa-snowflake text-blue-400 opacity-60"></i> ${f.name}</span><span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">${f.portions} P.</span></button>`).join('') : '<p class="text-[10px] italic p-3 opacity-40">Nichts Passendes vorrätig...</p>');
+        };
 
         window.selectPlanItem = async (name, type, id) => {
             weekPlan[currentPlanDay] = { name, type, id };
-            if (db && user) {
-                await setDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'plans_' + currentSyncKey), weekPlan);
-                if (type === 'freezer') {
-                    const item = freezer.find(f => f.id === id);
-                    if (item && item.portions > 0) await updateDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'freezer_' + currentSyncKey, id), { portions: item.portions - 1 });
+            try {
+                if (db && user) {
+                    await setDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'plans', currentSyncKey), weekPlan);
+                    if (type === 'freezer') {
+                        const item = freezer.find(f => f.id === id);
+                        if (item && item.portions > 0) {
+                            await updateDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'freezer_' + currentSyncKey, id), { portions: item.portions - 1 });
+                        }
+                    }
+                } else {
+                    if (type === 'freezer') {
+                        const item = freezer.find(f => f.id === id);
+                        if (item && item.portions > 0) item.portions -= 1;
+                    }
+                    saveToLocal(); renderPlan(); renderFreezer();
                 }
-            } else {
-                if (type === 'freezer') {
-                    const item = freezer.find(f => f.id === id);
-                    if (item && item.portions > 0) item.portions -= 1;
-                }
-                saveToLocal(); renderPlan(); renderFreezer();
-            }
-            closePlanModal();
+                window.closePlanModal();
+            } catch (err) { console.error("Plan Error:", err); }
         };
 
         window.savePlanEntry = async () => {
             const t = document.getElementById('planCustomText').value;
             if(t) { 
                 weekPlan[currentPlanDay] = { name: t, type: 'custom' }; 
-                if (db && user) await setDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'plans_' + currentSyncKey), weekPlan); 
+                if (db && user) await setDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'plans', currentSyncKey), weekPlan); 
                 else { saveToLocal(); renderPlan(); }
-                closePlanModal(); 
+                window.closePlanModal(); 
             }
         };
 
+        // --- TIEFKÜHLER ---
         window.renderFreezer = () => {
             const list = document.getElementById('freezerList'); 
-            list.innerHTML = freezer.length ? '' : '<p class="text-center italic text-xs py-4 opacity-30">Noch nichts im Frost...</p>';
+            list.innerHTML = freezer.length ? '' : '<p class="text-center italic text-xs py-4 opacity-30">Keine Vorräte vorhanden...</p>';
             freezer.forEach(i => {
-                list.innerHTML += `<div class="flex justify-between items-center p-4 bg-white/70 rounded-2xl border border-dashed border-[#d2b48c] group"><div class="text-sm"><b>${i.name}</b><br><span class="text-[10px] text-[#8b5a2b] uppercase font-bold">${i.portions} Portionen</span></div><div class="flex gap-2 items-center"><button onclick="changePortion('${i.id}',-1)" class="w-8 h-8 border-2 border-[#d2b48c] rounded-full flex items-center justify-center font-bold">-</button><button onclick="changePortion('${i.id}',1)" class="w-8 h-8 border-2 border-[#d2b48c] rounded-full flex items-center justify-center font-bold">+</button><button onclick="deleteFreezerItem('${i.id}', '${i.name}')" class="ml-2 text-red-700 opacity-20 group-hover:opacity-100 p-1"><i class="fas fa-trash-alt"></i></button></div></div>`;
+                list.innerHTML += `<div class="flex justify-between items-center p-4 bg-white/70 rounded-2xl border border-dashed border-[#d2b48c] group transition-all"><div class="text-sm"><b>${i.name}</b><br><span class="text-[10px] text-[#8b5a2b] uppercase font-bold">${i.portions} Portionen</span></div><div class="flex gap-2 items-center"><button onclick="window.changePortion('${i.id}',-1)" class="w-8 h-8 border-2 border-[#d2b48c] rounded-full flex items-center justify-center font-bold">-</button><button onclick="window.changePortion('${i.id}',1)" class="w-8 h-8 border-2 border-[#d2b48c] rounded-full flex items-center justify-center font-bold">+</button><button onclick="window.deleteFreezerItem('${i.id}', '${i.name}')" class="ml-2 text-red-700 p-2"><i class="fas fa-trash-alt"></i></button></div></div>`;
             });
         };
 
@@ -530,6 +541,13 @@ html
             const newVal = Math.max(0, i.portions + diff);
             if (db && user) await updateDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'freezer_' + currentSyncKey, id), { portions: newVal }); 
             else { i.portions = newVal; saveToLocal(); renderFreezer(); }
+        };
+
+        window.deleteFreezerItem = (id, name) => {
+            window.showConfirm(`"${name}" aus dem Tiefkühler entfernen?`, async () => {
+                if (db && user) await deleteDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'freezer_' + currentSyncKey, id));
+                else { freezer = freezer.filter(x => x.id !== id); saveToLocal(); renderFreezer(); }
+            });
         };
 
         window.saveFreezerItem = async () => {
@@ -550,13 +568,20 @@ html
             }
         };
 
+        // --- UI UTILS ---
         window.showConfirm = (msg, action) => { document.getElementById('confirmMessage').innerText = msg; confirmAction = action; document.getElementById('confirmModal').classList.remove('hidden'); };
-        window.closeConfirm = () => { document.getElementById('confirmModal').classList.add('hidden'); };
-        document.getElementById('confirmYesBtn').onclick = () => { if(confirmAction) confirmAction(); closeConfirm(); };
+        window.closeConfirm = () => { document.getElementById('confirmModal').classList.add('hidden'); confirmAction = null; };
+        document.getElementById('confirmYesBtn').onclick = () => { if(confirmAction) confirmAction(); window.closeConfirm(); };
         window.openFreezerModal = () => document.getElementById('freezerModal').classList.remove('hidden');
-        window.closeModal = () => document.getElementById('recipeModal').classList.add('hidden');
-        window.togglePageView = () => document.body.classList.toggle('single-page-active');
-        document.getElementById('recipeImageInput').addEventListener('change', (e) => { const f = e.target.files[0]; if(f) { const reader = new FileReader(); reader.onload = (ev) => currentImageData = ev.target.result; reader.readAsDataURL(f); } });
+        window.switchTab('recipes');
+
+        const lastKeyLS = localStorage.getItem('lastSyncKey');
+        if(lastKeyLS) document.getElementById('syncKeyInput').value = atob(lastKeyLS);
+
+        document.getElementById('recipeImageInput').addEventListener('change', (e) => {
+            const f = e.target.files[0];
+            if(f) { const r = new FileReader(); r.onload = (ev) => currentImageData = ev.target.result; r.readAsDataURL(f); }
+        });
     </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-html
+
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -44,7 +44,6 @@ html
             transition: all 0.2s ease;
         }
 
-        /* Book Flip Animation */
         .book-wrapper {
             perspective: 1500px;
             width: 100%;
@@ -91,6 +90,10 @@ html
         .status-badge { font-size: 11px; padding: 4px 12px; border-radius: 20px; font-weight: 600; }
         .status-offline { background: #fee2e2; color: #991b1b; }
         .status-online { background: #dcfce7; color: #166534; }
+
+        #copyToast {
+            transition: opacity 0.3s ease;
+        }
 
         @media (max-width: 640px) {
             .book-wrapper { height: 75vh; }
@@ -144,32 +147,42 @@ html
         </div>
     </div>
 
-    <!-- DETAIL MODAL -->
+    <!-- DETAIL MODAL (BUCH) -->
     <div id="detailModal" class="fixed inset-0 bg-black/90 hidden z-[150] flex items-center justify-center p-2 md:p-6 backdrop-blur-md">
         <div class="absolute top-4 right-4 z-[200] flex gap-2">
             <button onclick="closeDetail()" class="bg-white/20 text-white w-12 h-12 rounded-full flex items-center justify-center text-xl"><i class="fas fa-times"></i></button>
         </div>
 
         <div id="bookWrapper" class="book-wrapper">
-            <!-- SEITE 1 -->
+            <!-- SEITE 1: EINKAUF -->
             <div class="page page-ingredients paper-texture p-6 md:p-10 flex flex-col">
                 <div class="mb-4">
-                    <span class="text-[10px] uppercase tracking-widest text-[#8b5a2b] font-bold">Seite 1: Einkauf</span>
+                    <div class="flex justify-between items-start">
+                        <span class="text-[10px] uppercase tracking-widest text-[#8b5a2b] font-bold">Seite 1: Einkauf</span>
+                        <button onclick="window.copyIngredients()" class="text-[#8b5a2b] text-xs flex items-center gap-1 bg-[#eaddca] px-2 py-1 rounded-md">
+                            <i class="fas fa-copy"></i> Kopieren
+                        </button>
+                    </div>
                     <h2 id="detailTitle" class="text-2xl md:text-3xl font-bold text-[#5d4037]"></h2>
                 </div>
+                
                 <div id="detailImageContainer" class="hidden mb-4">
                     <div class="glued-photo mx-auto"><img id="detailImage" src="" class="max-h-32 rounded"></div>
                 </div>
-                <div class="flex-grow overflow-y-auto pr-2">
+
+                <div class="flex-grow overflow-y-auto pr-2 relative">
                     <h3 class="font-bold border-b border-[#d2b48c] mb-3 text-[#8b5a2b]">Zutatenliste</h3>
                     <div id="detailIngredients" class="whitespace-pre-line text-sm md:text-base leading-relaxed italic"></div>
+                    <div id="copyToast" class="absolute top-0 right-0 bg-[#8b5a2b] text-white text-[10px] px-2 py-1 rounded opacity-0 pointer-events-none">Kopiert!</div>
                 </div>
+
                 <button onclick="flipPage(true)" class="btn-turn-page">
                     <span>Umblättern zum Kochen</span>
                     <i class="fas fa-chevron-right"></i>
                 </button>
             </div>
-            <!-- SEITE 2 -->
+
+            <!-- SEITE 2: KOCHEN -->
             <div class="page page-instructions paper-texture p-6 md:p-10 flex flex-col">
                 <div class="flex justify-between items-start mb-4">
                     <div>
@@ -181,10 +194,12 @@ html
                         <button id="deleteRecipeBtn" class="text-red-700"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
+
                 <div class="flex-grow overflow-y-auto pr-2">
                     <h3 class="font-bold border-b border-[#d2b48c] mb-3 text-[#8b5a2b]">Zubereitung</h3>
                     <div id="detailInstructions" class="whitespace-pre-line text-sm md:text-base leading-relaxed"></div>
                 </div>
+
                 <button onclick="flipPage(false)" class="btn-turn-page">
                     <i class="fas fa-chevron-left"></i>
                     <span>Zurück zum Einkauf</span>
@@ -277,7 +292,7 @@ html
             const key = document.getElementById('syncKeyInput').value.trim();
             if(!key) return alert("Gib einen Schlüssel ein!");
             currentSyncKey = btoa(key).replace(/=/g, "");
-            localStorage.setItem('lastSyncKey', key);
+            localStorage.setItem('lastSyncKey', currentSyncKey);
             
             loadFromLocal();
             document.getElementById('loginOverlay').classList.add('hidden');
@@ -396,6 +411,24 @@ html
         window.closeDetail = () => document.getElementById('detailModal').classList.add('hidden');
         window.flipPage = (f) => document.getElementById('bookWrapper').classList.toggle('is-flipped', f);
 
+        window.copyIngredients = () => {
+            if (!currentRecipeInView) return;
+            const text = `${currentRecipeInView.title} - Einkaufsliste:\n\n${currentRecipeInView.ingredients}`;
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                const toast = document.getElementById('copyToast');
+                toast.style.opacity = "1";
+                setTimeout(() => { toast.style.opacity = "0"; }, 2000);
+            } catch (err) {
+                console.error('Kopieren fehlgeschlagen', err);
+            }
+            document.body.removeChild(textArea);
+        };
+
         window.openModal = (id=null) => {
             const form = document.getElementById('recipeForm'); form.reset(); 
             document.getElementById('editId').value = id || '';
@@ -441,10 +474,7 @@ html
                 const entry = weekPlan[day];
                 const card = document.createElement('div');
                 card.className = 'day-card p-5 rounded-2xl paper-texture shadow-sm border-l-4 border-[#8b5a2b] flex flex-col h-full relative';
-                
-                // Lösch-Button falls was geplant ist
                 const deleteBtn = entry ? `<button onclick="window.deletePlanEntry('${day}')" class="absolute top-4 right-4 text-red-700/30 hover:text-red-700 p-1"><i class="fas fa-trash"></i></button>` : '';
-
                 card.innerHTML = `
                     <h3 class="font-bold border-b border-dashed border-[#d2b48c] mb-2 text-[#8b5a2b]">${day}</h3>
                     ${deleteBtn}
@@ -464,8 +494,7 @@ html
             if (db && user) {
                 await setDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'plans', currentSyncKey), weekPlan);
             } else {
-                saveToLocal();
-                renderPlan();
+                saveToLocal(); renderPlan();
             }
         };
 
@@ -576,7 +605,15 @@ html
         window.switchTab('recipes');
 
         const lastKeyLS = localStorage.getItem('lastSyncKey');
-        if(lastKeyLS) document.getElementById('syncKeyInput').value = atob(lastKeyLS);
+        if(lastKeyLS) {
+            try {
+                // Check if it's base64 (for backward compatibility)
+                const decoded = atob(lastKeyLS);
+                document.getElementById('syncKeyInput').value = decoded;
+            } catch(e) {
+                document.getElementById('syncKeyInput').value = lastKeyLS;
+            }
+        }
 
         document.getElementById('recipeImageInput').addEventListener('change', (e) => {
             const f = e.target.files[0];

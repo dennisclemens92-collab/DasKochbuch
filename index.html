@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meine Rezept-Box & Planer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Quicksand:wght@300;400;500;600&display=swap');
+        
+        :root {
+            --paper-color: #fcf8f1;
+            --accent-color: #8b5a2b;
+            --text-color: #4a3728;
+            --border-color: #d2b48c;
+            --book-shadow: rgba(0, 0, 0, 0.2);
+        }
+
+        body {
+            background-color: #f4ece1;
+            background-image: url("https://www.transparenttextures.com/patterns/felt.png");
+            font-family: 'Quicksand', sans-serif;
+            color: var(--text-color);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+
+        h1, h2, h3 { font-family: 'Crimson Pro', serif; }
+
+        .paper-texture {
+            background-color: var(--paper-color);
+            background-image: url("https://www.transparenttextures.com/patterns/handmade-paper.png");
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid rgba(139, 90, 43, 0.1);
+        }
+
+        .nav-tab { transition: all 0.3s ease; border-bottom: 3px solid transparent; }
+        .nav-tab.active { color: var(--accent-color); border-bottom: 3px solid var(--accent-color); font-weight: bold; }
+
+        .recipe-card {
+            border-left: 6px solid var(--accent-color);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .recipe-card:hover { transform: translateY(-5px) rotate(0.5deg); box-shadow: 0 15px 30px rgba(139, 90, 43, 0.15); }
+        .btn-rustikal { background-color: var(--accent-color); color: white; transition: all 0.2s; }
+        .btn-rustikal:hover { background-color: #6f4823; transform: scale(1.05); }
+        .label-badge { background-color: #eaddca; color: #5d4037; border: 1px solid #d2b48c; }
+
+        .book-container {
+            perspective: 1500px;
+            display: flex;
+            width: 95%;
+            max-width: 1100px;
+            height: 85vh;
+            margin: auto;
+            transform: rotateX(5deg);
+            animation: openBook 0.6s ease-out forwards;
+        }
+
+        @keyframes openBook {
+            from { transform: rotateX(20deg) scale(0.8); opacity: 0; }
+            to { transform: rotateX(5deg) scale(1); opacity: 1; }
+        }
+
+        .book-page {
+            flex: 1;
+            background-color: var(--paper-color);
+            background-image: url("https://www.transparenttextures.com/patterns/handmade-paper.png");
+            padding: 3rem;
+            position: relative;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px var(--book-shadow);
+        }
+
+        .page-left { border-radius: 15px 0 0 15px; border-right: 1px solid rgba(0,0,0,0.1); background: linear-gradient(to right, var(--paper-color) 92%, #e5ddd0 100%); }
+        .page-right { border-radius: 0 15px 15px 0; border-left: 1px solid rgba(0,0,0,0.1); background: linear-gradient(to left, var(--paper-color) 92%, #e5ddd0 100%); }
+
+        .glued-photo {
+            position: relative;
+            display: inline-block;
+            background: white;
+            padding: 10px 10px 25px 10px;
+            box-shadow: 2px 5px 15px rgba(0,0,0,0.2);
+            transform: rotate(-2deg);
+            max-width: 100%;
+            margin: 20px 0;
+        }
+
+        .glued-photo::before {
+            content: ""; position: absolute; top: -15px; left: 50%; width: 100px; height: 30px;
+            background: rgba(210, 180, 140, 0.4); transform: translateX(-50%) rotate(2deg);
+        }
+
+        .single-page-active .book-container { flex-direction: column; height: auto; max-height: 90vh; transform: none; }
+        .single-page-active .book-spine { display: none; }
+        .single-page-active .page-left { border-radius: 15px 15px 0 0; border-bottom: 2px dashed var(--border-color); flex: none; }
+        .single-page-active .page-right { border-radius: 0 0 15px 15px; flex: none; }
+
+        .book-spine { width: 20px; background: linear-gradient(to right, #8b5a2b, #a67c52, #8b5a2b); box-shadow: inset 0 0 10px rgba(0,0,0,0.3); z-index: 10; }
+        .form-input { border: 2px solid #d2b48c; background: #fffdfa; }
+        .form-input:focus { border-color: var(--accent-color); outline: none; background: white; }
+
+        .day-card { border: 2px solid var(--border-color); background: var(--paper-color); position: relative; }
+        .day-card.shopping-day::after { content: "🛒 Einkaufstag"; position: absolute; top: -10px; right: 10px; background: var(--accent-color); color: white; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        
+        #syncStatus { font-size: 10px; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-top: 10px; }
+        .status-offline { background: #fee2e2; color: #991b1b; }
+        .status-online { background: #dcfce7; color: #166534; }
+        .status-pending { background: #fef9c3; color: #854d0e; }
+    </style>
+</head>
+<body class="p-4 md:p-6 lg:p-10">
+
+    <!-- LOGIN / SYNC OVERLAY -->
+    <div id="loginOverlay" class="fixed inset-0 bg-[#f4ece1] z-[100] flex items-center justify-center p-4">
+        <div class="paper-texture p-8 md:p-12 rounded-3xl max-w-md w-full text-center border-4 border-[#8b5a2b] shadow-2xl">
+            <i class="fas fa-key text-4xl text-[#8b5a2b] mb-4"></i>
+            <h2 class="text-3xl font-bold text-[#5d4037] mb-2">Deine Rezept-Cloud</h2>
+            <p class="text-sm italic mb-6">Gib deinen Schlüssel ein, um die Box zu öffnen.</p>
+            <input type="text" id="syncKeyInput" class="w-full p-4 rounded-xl form-input text-center text-xl font-bold tracking-widest mb-4" placeholder="z.B. MeinGeheimnis123">
+            <button onclick="startAppWithKey()" class="btn-rustikal w-full py-4 rounded-xl font-bold shadow-lg">Box öffnen</button>
+            <div id="syncStatus" class="status-offline">Offline</div>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTENT -->
+    <div id="mainApp" class="hidden">
+        <nav class="max-w-6xl mx-auto mb-8 flex justify-center gap-4 md:gap-8 text-sm md:text-lg font-medium border-b border-[#d2b48c]">
+            <button onclick="switchTab('recipes')" id="nav-recipes" class="nav-tab py-2 px-4 active flex items-center gap-2"><i class="fas fa-book"></i> Rezepte</button>
+            <button onclick="switchTab('plan')" id="nav-plan" class="nav-tab py-2 px-4 flex items-center gap-2"><i class="fas fa-calendar-alt"></i> Plan</button>
+            <button onclick="switchTab('freezer')" id="nav-freezer" class="nav-tab py-2 px-4 flex items-center gap-2"><i class="fas fa-snowflake"></i> Tiefkühler</button>
+        </nav>
+
+        <div class="max-w-6xl mx-auto">
+            <header class="text-center mb-10">
+                <h1 id="view-title" class="text-4xl md:text-7xl font-bold text-[#5d4037] mb-2">Meine Rezept-Box</h1>
+                <p id="view-subtitle" class="italic text-lg md:text-xl text-[#8b5a2b]">Hausgemachte Schätze</p>
+            </header>
+
+            <div id="view-recipes" class="tab-view">
+                <div class="flex flex-col md:flex-row gap-4 mb-8">
+                    <input type="text" id="searchInput" oninput="renderRecipes()" placeholder="Suchen..." class="flex-grow p-4 rounded-2xl form-input shadow-inner">
+                    <button onclick="openModal()" class="btn-rustikal px-8 py-4 rounded-2xl font-bold shadow-md">+ Neu</button>
+                </div>
+                <div id="filterContainer" class="flex flex-wrap justify-center gap-2 mb-8"></div>
+                <div id="recipeGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </div>
+
+            <div id="view-plan" class="tab-view hidden">
+                <div id="planGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div>
+            </div>
+
+            <div id="view-freezer" class="tab-view hidden">
+                <div class="paper-texture p-6 rounded-3xl max-w-2xl mx-auto">
+                    <div class="flex justify-between items-center mb-6 border-b-2 border-dashed border-[#d2b48c] pb-2">
+                        <h2 class="text-2xl font-bold text-[#5d4037]">Tiefkühler</h2>
+                        <button onclick="openFreezerModal()" class="text-[#8b5a2b] font-bold text-sm">+ Hinzufügen</button>
+                    </div>
+                    <div id="freezerList" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="recipeModal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="paper-texture p-6 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border-4 border-[#8b5a2b]">
+            <form id="recipeForm" class="space-y-4">
+                <input type="hidden" id="editId">
+                <input type="text" id="recipeTitle" required class="w-full p-3 rounded-xl form-input" placeholder="Titel">
+                <input type="text" id="recipeLabels" class="w-full p-3 rounded-xl form-input" placeholder="Labels (z.B. Vegan, Pasta)">
+                <input type="file" id="recipeImageInput" accept="image/*" class="text-xs">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <textarea id="recipeIngredients" class="w-full p-3 rounded-xl form-input h-32" placeholder="Zutaten..."></textarea>
+                    <textarea id="recipeInstructions" class="w-full p-3 rounded-xl form-input h-32" placeholder="Zubereitung..."></textarea>
+                </div>
+                <div class="flex justify-end gap-4">
+                    <button type="button" onclick="closeModal()" class="text-gray-500">Abbrechen</button>
+                    <button type="submit" class="btn-rustikal px-6 py-2 rounded-xl font-bold">Speichern</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="freezerModal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-50">
+        <div class="paper-texture p-6 rounded-2xl max-w-xs w-full border-2 border-[#8b5a2b]">
+            <input type="text" id="freezerItemName" class="w-full p-2 mb-2 border rounded" placeholder="Was?">
+            <input type="number" id="freezerItemPortions" class="w-full p-2 mb-4 border rounded" value="1">
+            <button onclick="saveFreezerItem()" class="btn-rustikal w-full py-2 rounded font-bold">Hinzufügen</button>
+        </div>
+    </div>
+
+    <!-- MODERNES PLANER MODAL -->
+    <div id="planModal" class="fixed inset-0 bg-black/70 hidden flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="paper-texture p-6 rounded-3xl max-w-lg w-full max-h-[85vh] flex flex-col border-4 border-[#8b5a2b] shadow-2xl overflow-hidden">
+            <div class="mb-4">
+                <h3 id="planModalTitle" class="text-2xl font-bold text-[#5d4037] mb-2">Planung</h3>
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" id="planSearchInput" oninput="filterPlanList()" class="w-full pl-10 pr-4 py-3 rounded-xl form-input border-2" placeholder="Nach Rezepten oder Vorrat suchen...">
+                </div>
+            </div>
+            
+            <div id="planScrollContainer" class="flex-grow overflow-y-auto pr-2 space-y-6">
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-widest text-[#8b5a2b] mb-2 sticky top-0 bg-[#fcf8f1] py-1">Meine Rezepte</h4>
+                    <div id="planRecipeList" class="space-y-1"></div>
+                </div>
+                <div>
+                    <h4 class="text-xs font-bold uppercase tracking-widest text-[#8b5a2b] mb-2 sticky top-0 bg-[#fcf8f1] py-1">Aus dem Tiefkühler</h4>
+                    <div id="planFreezerList" class="space-y-1"></div>
+                </div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-dashed border-[#d2b48c] space-y-3">
+                <input type="text" id="planCustomText" class="w-full p-3 rounded-xl form-input border-2" placeholder="Oder Freitext (z.B. Restaurant)">
+                <div class="flex gap-3">
+                    <button onclick="closePlanModal()" class="flex-1 py-3 font-bold text-gray-500 hover:text-gray-800 transition">Abbrechen</button>
+                    <button onclick="savePlanEntry()" class="flex-[2] btn-rustikal py-3 rounded-xl font-bold shadow-lg">Speichern</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="detailModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-[60] backdrop-blur-lg">
+        <div class="absolute top-4 right-4 flex gap-4 z-[70]">
+            <button onclick="togglePageView()" class="text-white text-xs opacity-50"><i class="fas fa-file-alt"></i> Ansicht</button>
+            <button onclick="closeDetail()" class="text-white text-2xl"><i class="fas fa-times-circle"></i></button>
+        </div>
+        <div id="bookContainer" class="book-container no-scrollbar">
+            <div class="book-page page-left no-scrollbar">
+                <h2 id="detailTitle" class="text-3xl font-bold text-[#5d4037] mb-4"></h2>
+                <div id="detailImageContainer" class="hidden mb-4"><div class="glued-photo"><img id="detailImage" src="" class="max-h-48 rounded mx-auto"></div></div>
+                <h3 class="font-bold text-[#8b5a2b] mb-2">Zutaten</h3>
+                <div id="detailIngredients" class="whitespace-pre-line text-sm italic border-l-2 border-[#d2b48c] pl-4 mb-4"></div>
+                <button onclick="freezeCurrentRecipe()" class="text-[10px] uppercase font-bold text-[#8b5a2b] hover:underline">Vorkochen & Einfrieren</button>
+            </div>
+            <div class="book-spine"></div>
+            <div class="book-page page-right no-scrollbar">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-[#8b5a2b]">Zubereitung</h3>
+                    <div class="flex gap-4">
+                        <button id="editBtn" class="text-xs text-[#8b5a2b] underline">Edit</button>
+                        <button id="deleteRecipeBtn" class="text-xs text-red-700 underline">Löschen</button>
+                    </div>
+                </div>
+                <div id="detailInstructions" class="whitespace-pre-line text-sm leading-relaxed"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BESTÄTIGUNGS MODAL -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/80 hidden flex items-center justify-center p-4 z-[100] backdrop-blur-md">
+        <div class="paper-texture p-6 rounded-2xl max-w-xs w-full border-2 border-red-700 text-center">
+            <i class="fas fa-exclamation-triangle text-red-700 text-3xl mb-3"></i>
+            <h3 class="font-bold text-lg mb-2">Bist du sicher?</h3>
+            <p id="confirmMessage" class="text-sm mb-6 opacity-70"></p>
+            <div class="flex gap-3">
+                <button onclick="closeConfirm()" class="flex-1 py-2 text-sm font-bold text-gray-500">Abbrechen</button>
+                <button id="confirmYesBtn" class="flex-1 py-2 text-sm font-bold bg-red-700 text-white rounded-lg">Ja, Löschen</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIREBASE LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot, addDoc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- DEINE EIGENE KONFIGURATION ---
+        const userFirebaseConfig = {
+            apiKey: "AIzaSyDQaLCpC_GLGcAPi4PVWQYO55ck38noxeo",
+            authDomain: "daskochbuch-21a48.firebaseapp.com",
+            projectId: "daskochbuch-21a48",
+            storageBucket: "daskochbuch-21a48.firebasestorage.app",
+            messagingSenderId: "940507888707",
+            appId: "1:940507888707:web:d9afc76fd5272ac08528f6"
+        };
+
+        const baseAppId = "daskochbuch-app"; // Konstante App ID
+        let db = null, auth = null, user = null;
+        let recipes = [], freezer = [], weekPlan = {"Mo":null,"Di":null,"Mi":null,"Do":null,"Fr":null,"Sa":null,"So":null};
+        let currentSyncKey = "", currentTab = 'recipes', activeFilter = null, isSinglePage = false, currentImageData = "", currentPlanDay = "", currentRecipeInView = null;
+        let confirmAction = null;
+
+        // --- INITIALISIERUNG ---
+        const initFirebase = async () => {
+            const statusEl = document.getElementById('syncStatus');
+            try {
+                let config = null;
+                if (userFirebaseConfig && userFirebaseConfig.apiKey) {
+                    config = userFirebaseConfig;
+                } else if (typeof __firebase_config !== 'undefined') {
+                    config = JSON.parse(__firebase_config);
+                }
+
+                if (config) {
+                    statusEl.innerText = "Verbinde...";
+                    statusEl.className = "status-pending";
+                    
+                    const app = initializeApp(config);
+                    auth = getAuth(app);
+                    db = getFirestore(app);
+                    
+                    onAuthStateChanged(auth, async (u) => {
+                        user = u;
+                        if (user && currentSyncKey) {
+                            console.log("Auth erfolgreich:", user.uid);
+                            startSync();
+                            statusEl.innerText = "Cloud Aktiv";
+                            statusEl.className = "status-online";
+                        }
+                    });
+
+                    // Regel 3: Auth vor Queries
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } else {
+                    throw new Error("No Config");
+                }
+            } catch (e) {
+                console.warn("Cloud-Fehler (evtl. file:// Protokoll):", e.message);
+                statusEl.innerText = "Nur Lokal (Offline)";
+                statusEl.className = "status-offline";
+                loadFromLocal();
+            }
+        };
+
+        const startSync = () => {
+            // Regel 1: Absolute Pfade /artifacts/{appId}/public/data/{collectionName}
+            // Wir nutzen den SyncKey als Teil des Collection-Namens zur Trennung
+            const syncId = currentSyncKey; 
+            
+            // Rezepte Sync
+            onSnapshot(collection(db, 'artifacts', baseAppId, 'public', 'data', 'recipes_' + syncId), (s) => { 
+                recipes = s.docs.map(d => ({ id: d.id, ...d.data() })); 
+                saveToLocal(); // Backup lokal halten
+                renderRecipes(); 
+            }, (err) => console.error("Sync Error Rezepte:", err));
+            
+            // Tiefkühler Sync
+            onSnapshot(collection(db, 'artifacts', baseAppId, 'public', 'data', 'freezer_' + syncId), (s) => { 
+                freezer = s.docs.map(d => ({ id: d.id, ...d.data() })); 
+                saveToLocal();
+                renderFreezer(); 
+            }, (err) => console.error("Sync Error Tiefkühler:", err));
+            
+            // Wochenplan Sync
+            onSnapshot(doc(db, 'artifacts', baseAppId, 'public', 'data', 'plans_' + syncId), (s) => { 
+                if (s.exists()) weekPlan = s.data();
+                else weekPlan = {"Mo":null,"Di":null,"Mi":null,"Do":null,"Fr":null,"Sa":null,"So":null};
+                saveToLocal();
+                renderPlan(); 
+            }, (err) => console.error("Sync Error Plan:", err));
+        };
+
+        const loadFromLocal = () => {
+            const suffix = currentSyncKey ? '_' + currentSyncKey : '';
+            recipes = JSON.parse(localStorage.getItem('rec_cache' + suffix) || '[]');
+            freezer = JSON.parse(localStorage.getItem('frz_cache' + suffix) || '[]');
+            weekPlan = JSON.parse(localStorage.getItem('pln_cache' + suffix) || '{"Mo":null,"Di":null,"Mi":null,"Do":null,"Fr":null,"Sa":null,"So":null}');
+            renderRecipes(); renderPlan(); renderFreezer();
+        };
+
+        const saveToLocal = () => {
+            const suffix = currentSyncKey ? '_' + currentSyncKey : '';
+            localStorage.setItem('rec_cache' + suffix, JSON.stringify(recipes));
+            localStorage.setItem('frz_cache' + suffix, JSON.stringify(freezer));
+            localStorage.setItem('pln_cache' + suffix, JSON.stringify(weekPlan));
+        };
+
+        // --- UI HELPERS ---
+        window.startAppWithKey = async () => {
+            const key = document.getElementById('syncKeyInput').value.trim();
+            if(!key) return alert("Bitte Schlüssel eingeben!");
+            currentSyncKey = btoa(key).replace(/=/g, "");
+            localStorage.setItem('lastSyncKey', key);
+            
+            // Erst lokal laden, damit die App sofort reagiert
+            loadFromLocal();
+            
+            document.getElementById('loginOverlay').classList.add('hidden');
+            document.getElementById('mainApp').classList.remove('hidden');
+            
+            // Dann Cloud-Verbindung versuchen
+            await initFirebase();
+        };
+
+        const lastKey = localStorage.getItem('lastSyncKey');
+        if(lastKey) document.getElementById('syncKeyInput').value = lastKey;
+
+        window.switchTab = (t) => {
+            currentTab = t;
+            document.querySelectorAll('.tab-view').forEach(v => v.classList.add('hidden'));
+            document.querySelectorAll('.nav-tab').forEach(n => n.classList.remove('active'));
+            document.getElementById('view-' + t).classList.remove('hidden');
+            document.getElementById('nav-' + t).classList.add('active');
+            renderRecipes(); renderPlan(); renderFreezer();
+        };
+
+        window.showConfirm = (msg, action) => {
+            document.getElementById('confirmMessage').innerText = msg;
+            confirmAction = action;
+            document.getElementById('confirmModal').classList.remove('hidden');
+        };
+
+        window.closeConfirm = () => {
+            document.getElementById('confirmModal').classList.add('hidden');
+            confirmAction = null;
+        };
+
+        document.getElementById('confirmYesBtn').onclick = () => {
+            if(confirmAction) confirmAction();
+            closeConfirm();
+        };
+
+        // --- RECIPE LOGIC ---
+        window.renderRecipes = () => {
+            const grid = document.getElementById('recipeGrid');
+            grid.innerHTML = '';
+            recipes.filter(r => !activeFilter || r.labels.includes(activeFilter)).forEach(r => {
+                const card = document.createElement('div');
+                card.className = 'paper-texture recipe-card p-4 rounded-xl flex flex-col';
+                card.onclick = () => openDetail(r.id);
+                card.innerHTML = `<h3 class="font-bold">${r.title}</h3><div class="mt-auto text-[10px] opacity-50 uppercase tracking-widest">Öffnen</div>`;
+                grid.appendChild(card);
+            });
+            renderFilterButtons();
+        };
+
+        const renderFilterButtons = () => {
+            const container = document.getElementById('filterContainer');
+            const labels = [...new Set(recipes.flatMap(r => r.labels))].sort();
+            container.innerHTML = `<button onclick="setFilter(null)" class="px-4 py-1 rounded-full border text-xs ${!activeFilter ? 'bg-amber-800 text-white' : ''}">Alle</button>`;
+            labels.forEach(l => {
+                const btn = document.createElement('button'); btn.innerText = l;
+                btn.className = `px-4 py-1 rounded-full border text-xs ${activeFilter === l ? 'bg-amber-800 text-white' : ''}`;
+                btn.onclick = () => window.setFilter(l); container.appendChild(btn);
+            });
+        };
+        window.setFilter = (l) => { activeFilter = (activeFilter === l) ? null : l; renderRecipes(); };
+
+        window.openModal = (id=null) => {
+            const form = document.getElementById('recipeForm'); form.reset(); 
+            document.getElementById('editId').value = '';
+            currentImageData = "";
+            if(id) {
+                const r = recipes.find(x => x.id === id); 
+                document.getElementById('editId').value = r.id; 
+                document.getElementById('recipeTitle').value = r.title; 
+                document.getElementById('recipeLabels').value = r.labels.join(', ');
+                document.getElementById('recipeIngredients').value = r.ingredients; 
+                document.getElementById('recipeInstructions').value = r.instructions;
+                currentImageData = r.image || "";
+            }
+            document.getElementById('recipeModal').classList.remove('hidden');
+        };
+        window.closeModal = () => document.getElementById('recipeModal').classList.add('hidden');
+
+        document.getElementById('recipeForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            const data = {
+                title: document.getElementById('recipeTitle').value,
+                labels: document.getElementById('recipeLabels').value.split(',').map(s=>s.trim()).filter(s=>s),
+                ingredients: document.getElementById('recipeIngredients').value,
+                instructions: document.getElementById('recipeInstructions').value,
+                image: currentImageData
+            };
+            
+            // Immer lokal speichern
+            if(id) {
+                const idx = recipes.findIndex(x=>x.id==id);
+                recipes[idx] = {...data, id};
+            } else {
+                recipes.push({...data, id: Date.now().toString()});
+            }
+            saveToLocal();
+            renderRecipes();
+
+            // Cloud Sync falls verfügbar
+            try {
+                if (db && user) {
+                    const path = `artifacts/${baseAppId}/public/data/recipes_${currentSyncKey}`;
+                    if(id) await updateDoc(doc(db, path, id), data); 
+                    else await addDoc(collection(db, path), data);
+                }
+            } catch (err) { console.error("Cloud Save Error:", err); }
+            closeModal();
+        };
+
+        window.openDetail = (id) => {
+            const r = recipes.find(x => x.id === id); 
+            if(!r) return;
+            currentRecipeInView = r;
+            document.getElementById('detailTitle').innerText = r.title;
+            document.getElementById('detailIngredients').innerText = r.ingredients || "Keine Zutaten";
+            document.getElementById('detailInstructions').innerText = r.instructions || "Keine Schritte";
+            
+            const imgContainer = document.getElementById('detailImageContainer');
+            if (r.image) {
+                document.getElementById('detailImage').src = r.image;
+                imgContainer.classList.remove('hidden');
+            } else {
+                imgContainer.classList.add('hidden');
+            }
+
+            document.getElementById('detailModal').classList.remove('hidden');
+            document.getElementById('editBtn').onclick = () => { closeDetail(); openModal(r.id); };
+            document.getElementById('deleteRecipeBtn').onclick = () => {
+                showConfirm(`Möchtest du das Rezept "${r.title}" wirklich löschen?`, async () => {
+                    recipes = recipes.filter(x => x.id !== r.id);
+                    saveToLocal();
+                    renderRecipes();
+                    if (db && user) {
+                        await deleteDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'recipes_' + currentSyncKey, r.id));
+                    }
+                    closeDetail();
+                });
+            };
+        };
+        window.closeDetail = () => document.getElementById('detailModal').classList.add('hidden');
+
+        // --- PLANNER LOGIC ---
+        window.renderPlan = () => {
+            const grid = document.getElementById('planGrid'); grid.innerHTML = '';
+            ["Mo","Di","Mi","Do","Fr","Sa","So"].forEach(day => {
+                const entry = weekPlan[day];
+                const card = document.createElement('div');
+                card.className = `day-card p-4 rounded-xl paper-texture`;
+                card.innerHTML = `<h3 class="font-bold border-b mb-2 text-[#8b5a2b]">${day}</h3><div class="text-sm italic min-h-[40px]">${entry ? entry.name : 'Leer'}</div><button onclick="openPlanModal('${day}')" class="w-full mt-2 py-1 bg-amber-100 text-amber-900 rounded text-[10px] font-bold">ÄNDERN</button>`;
+                grid.appendChild(card);
+            });
+        };
+
+        window.openPlanModal = (day) => {
+            currentPlanDay = day;
+            document.getElementById('planModalTitle').innerText = `${day} planen`;
+            document.getElementById('planCustomText').value = "";
+            document.getElementById('planSearchInput').value = "";
+            renderPlanLists();
+            document.getElementById('planModal').classList.remove('hidden');
+        };
+
+        window.closePlanModal = () => document.getElementById('planModal').classList.add('hidden');
+
+        function renderPlanLists(filter = "") {
+            const rList = document.getElementById('planRecipeList');
+            const fList = document.getElementById('planFreezerList');
+            const term = filter.toLowerCase();
+
+            if (term === "") {
+                rList.innerHTML = `<p class="text-[10px] italic p-3 opacity-40">Tippe, um nach Rezepten zu suchen...</p>`;
+            } else {
+                const filteredRecipes = recipes.filter(r => r.title.toLowerCase().includes(term));
+                rList.innerHTML = filteredRecipes.length ? 
+                    filteredRecipes.map(r => `<button onclick="selectPlanItem('${r.title}', 'recipe', '${r.id}')" class="w-full text-left p-3 hover:bg-[#f4ece1] rounded-xl text-sm border-b border-gray-100 transition flex items-center gap-3"><i class="fas fa-utensils text-xs opacity-30"></i> ${r.title}</button>`).join('') :
+                    `<p class="text-[10px] italic p-3 opacity-40">Keine Rezepte gefunden</p>`;
+            }
+
+            const filteredFreezer = freezer.filter(f => f.portions > 0 && f.name.toLowerCase().includes(term));
+            fList.innerHTML = filteredFreezer.length ?
+                filteredFreezer.map(f => `<button onclick="selectPlanItem('${f.name}', 'freezer', '${f.id}')" class="w-full text-left p-3 hover:bg-[#f4ece1] rounded-xl text-sm border-b border-gray-100 transition flex justify-between items-center"><span class="flex items-center gap-3"><i class="fas fa-snowflake text-xs opacity-30 text-blue-400"></i> ${f.name}</span><span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">${f.portions} P.</span></button>`).join('') :
+                `<p class="text-[10px] italic p-3 opacity-40">Nichts im Tiefkühler</p>`;
+        }
+
+        window.filterPlanList = () => {
+            const val = document.getElementById('planSearchInput').value;
+            renderPlanLists(val);
+        };
+
+        window.selectPlanItem = async (name, type, id) => {
+            weekPlan[currentPlanDay] = { name, type, id };
+            if (type === 'freezer') {
+                const item = freezer.find(f => f.id === id);
+                if (item && item.portions > 0) item.portions -= 1;
+            }
+            saveToLocal(); 
+            renderPlan(); 
+            renderFreezer();
+
+            try {
+                if (db && user) {
+                    const syncId = currentSyncKey;
+                    await setDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'plans_' + syncId), weekPlan);
+                    if (type === 'freezer') {
+                        await updateDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'freezer_' + syncId, id), { 
+                            portions: freezer.find(f => f.id === id).portions 
+                        });
+                    }
+                }
+            } catch (err) { console.error("Plan Sync Error:", err); }
+            closePlanModal();
+        };
+
+        window.savePlanEntry = async () => {
+            const t = document.getElementById('planCustomText').value;
+            if(t) { 
+                weekPlan[currentPlanDay] = { name: t, type: 'custom' }; 
+                saveToLocal(); renderPlan();
+                try {
+                    if (db && user) { 
+                        await setDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'plans_' + currentSyncKey), weekPlan); 
+                    }
+                } catch (err) {}
+                closePlanModal(); 
+            }
+        };
+
+        // --- FREEZER LOGIC ---
+        window.renderFreezer = () => {
+            const list = document.getElementById('freezerList'); 
+            list.innerHTML = freezer.length ? '' : '<p class="text-center italic text-xs py-4 opacity-30">Leer</p>';
+            freezer.forEach(i => {
+                const d = document.createElement('div'); 
+                d.className = 'flex justify-between items-center p-3 bg-white/50 rounded-xl border border-dashed border-amber-800/20 group';
+                d.innerHTML = `
+                    <div class="text-sm"><b>${i.name}</b> (${i.portions} P.)</div>
+                    <div class="flex gap-2 items-center">
+                        <button onclick="changePortion('${i.id}',-1)" class="px-2 border rounded hover:bg-amber-50">-</button>
+                        <button onclick="changePortion('${i.id}',1)" class="px-2 border rounded hover:bg-amber-50">+</button>
+                        <button onclick="deleteFreezerItem('${i.id}', '${i.name}')" class="ml-2 text-red-700 opacity-20 group-hover:opacity-100 transition p-1">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>`;
+                list.appendChild(d);
+            });
+        };
+
+        window.changePortion = async (id, diff) => {
+            const i = freezer.find(x => x.id == id);
+            if(!i) return;
+            const newVal = Math.max(0, i.portions + diff);
+            i.portions = newVal;
+            saveToLocal();
+            renderFreezer();
+            try {
+                if (db && user) { 
+                    await updateDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'freezer_' + currentSyncKey, id), { portions: newVal }); 
+                }
+            } catch (err) {}
+        };
+
+        window.deleteFreezerItem = (id, name) => {
+            showConfirm(`"${name}" entfernen?`, async () => {
+                freezer = freezer.filter(x => x.id !== id);
+                saveToLocal();
+                renderFreezer();
+                if (db && user) {
+                    await deleteDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'freezer_' + currentSyncKey, id));
+                }
+            });
+        };
+
+        window.saveFreezerItem = async () => {
+            const n = document.getElementById('freezerItemName').value, p = parseInt(document.getElementById('freezerItemPortions').value);
+            if(n) {
+                const newItem = {id: Date.now().toString(), name: n, portions: p};
+                freezer.push(newItem); 
+                saveToLocal(); renderFreezer(); 
+                try {
+                    if(db && user) { 
+                        await setDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'freezer_' + currentSyncKey, newItem.id), { name: n, portions: p }); 
+                    }
+                } catch (err) {}
+                document.getElementById('freezerModal').classList.add('hidden');
+            }
+        };
+
+        window.freezeCurrentRecipe = async () => {
+            if (!currentRecipeInView) return;
+            const port = prompt(`Wie viele Portionen von "${currentRecipeInView.title}" einfrieren?`, "2");
+            if (port && !isNaN(port)) {
+                const newItem = {id: Date.now().toString(), name: currentRecipeInView.title, portions: parseInt(port)};
+                freezer.push(newItem);
+                saveToLocal(); renderFreezer();
+                try {
+                    if (db && user) {
+                        await setDoc(doc(db, 'artifacts', baseAppId, 'public', 'data', 'freezer_' + currentSyncKey, newItem.id), { 
+                            name: currentRecipeInView.title, 
+                            portions: parseInt(port) 
+                        });
+                    }
+                } catch (err) {}
+            }
+        };
+
+        window.openFreezerModal = () => document.getElementById('freezerModal').classList.remove('hidden');
+        window.togglePageView = () => { isSinglePage = !isSinglePage; document.body.classList.toggle('single-page-active', isSinglePage); };
+
+        document.getElementById('recipeImageInput').addEventListener('change', (e) => {
+            const f = e.target.files[0];
+            if(f) {
+                const reader = new FileReader();
+                reader.onload = (ev) => currentImageData = ev.target.result;
+                reader.readAsDataURL(f);
+            }
+        });
+
+    </script>
+</body>
+</html>
